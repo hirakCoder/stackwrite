@@ -2,23 +2,42 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Submit Your Tool" description="Get your AI tool, app, or developer product featured on StackWrite.">
-  <div class="content" style="padding: 60px 20px 80px;">
-    <h1 style="font-size: 32px; font-weight: 800; margin-bottom: 12px;">Submit Your Tool</h1>
-    <p style="color: var(--text-muted); margin-bottom: 40px;">We review AI tools, apps, and developer products for our audience of builders. Featured listings start at $200.</p>
+<BaseLayout title="Submit Your Tool" description="Get your AI tool, app, or developer product featured on stackwrite.com. Featured listings start at $200.">
+  <div style="max-width: 580px; margin: 0 auto; padding: 64px 24px 80px;">
+    <h1 style="font-family: -apple-system, system-ui, sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 8px;">Submit Your Tool</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 16px;">
+      We review AI tools, apps, and developer products for our audience of builders.
+    </p>
+    <p style="color: var(--text-tertiary); margin-bottom: 40px; font-size: 14px; font-family: -apple-system, system-ui, sans-serif;">
+      Featured listings start at $200. Free editorial reviews considered for exceptional products.
+    </p>
 
-    <form action="https://formspree.io/f/placeholder" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
-      <div>
-        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">Tool Name *</label>
-        <input name="tool_name" required style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;outline:none;" />
+    <!--
+      SETUP: Replace YOUR_ACCESS_KEY with a real key from https://web3forms.com
+      1. Go to web3forms.com
+      2. Enter: stackwrite@beatroot.dev
+      3. They email you an access key
+      4. Replace the value below
+      Until then, form submits via mailto: fallback
+    -->
+    <form action="https://api.web3forms.com/submit" method="POST" id="submit-form" style="display: flex; flex-direction: column; gap: 20px;">
+      <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY" />
+      <input type="hidden" name="subject" value="New Tool Submission — stackwrite.com" />
+      <input type="hidden" name="from_name" value="stackwrite.com Submit Form" />
+
+      <div class="form-field">
+        <label>Tool Name *</label>
+        <input name="tool_name" required placeholder="e.g. Repomix" />
       </div>
-      <div>
-        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">URL *</label>
-        <input name="url" type="url" required style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;outline:none;" />
+
+      <div class="form-field">
+        <label>URL *</label>
+        <input name="url" type="url" required placeholder="https://..." />
       </div>
-      <div>
-        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">Category</label>
-        <select name="category" style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;">
+
+      <div class="form-field">
+        <label>Category</label>
+        <select name="category">
           <option>AI Tool</option>
           <option>iOS App</option>
           <option>Android App</option>
@@ -28,15 +47,45 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <option>Other</option>
         </select>
       </div>
-      <div>
-        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">Description *</label>
-        <textarea name="description" rows="4" required style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;outline:none;resize:vertical;font-family:inherit;"></textarea>
+
+      <div class="form-field">
+        <label>Why should we feature this? *</label>
+        <textarea name="description" rows="4" required placeholder="What makes this tool special? Who is it for?"></textarea>
       </div>
-      <div>
-        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">Your Email *</label>
-        <input name="email" type="email" required style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;outline:none;" />
+
+      <div class="form-field">
+        <label>Your Email *</label>
+        <input name="email" type="email" required placeholder="you@company.com" />
       </div>
-      <button type="submit" class="btn" style="border:none;cursor:pointer;font-size:15px;">Submit for Review</button>
+
+      <div class="form-field">
+        <label>Listing Type</label>
+        <select name="listing_type">
+          <option>Free editorial review (we decide if/when to publish)</option>
+          <option>Featured listing ($200 — guaranteed placement within 7 days)</option>
+          <option>Sponsored article ($500 — dedicated review article)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn-primary" style="border: none; font-family: -apple-system, system-ui, sans-serif;">Submit for Review</button>
+
+      <p style="font-size: 12px; color: var(--text-tertiary); font-family: -apple-system, system-ui, sans-serif;">
+        We review all submissions within 48 hours. Free editorial reviews are published at our discretion.
+        Featured and sponsored listings are guaranteed.
+      </p>
     </form>
+
+    <script>
+      // Fallback: if Web3Forms key not set, use mailto
+      document.getElementById('submit-form').addEventListener('submit', function(e) {
+        const key = this.querySelector('[name="access_key"]').value;
+        if (key === 'YOUR_ACCESS_KEY') {
+          e.preventDefault();
+          const data = new FormData(this);
+          const body = [...data.entries()].map(([k,v]) => k + ': ' + v).join('\n');
+          window.location.href = 'mailto:stackwrite@beatroot.dev?subject=Tool Submission&body=' + encodeURIComponent(body);
+        }
+      });
+    </script>
   </div>
 </BaseLayout>
