@@ -488,33 +488,58 @@ let lastResult = '';
 
 async function showTrends() {
   const panel = document.getElementById('trend-panel');
-  const content = document.getElementById('trend-content');
+  const tc = document.getElementById('trend-content');
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
   
   if (panel.style.display === 'block') {
-    content.innerHTML = '<span style="color:#7c6cff">Scanning Reddit + GitHub...</span>';
+    tc.innerHTML = '<span style="color:#7c6cff">Scanning X, YouTube, Reddit, GitHub...</span>';
     try {
       const resp = await fetch('/api/trends');
       const data = await resp.json();
-      
-      let html = '<div style="margin-bottom:14px"><strong style="color:#e4e4ed">GitHub Trending</strong></div>';
-      data.github.forEach(r => {
-        html += `<div style="margin-bottom:8px;cursor:pointer" onclick="quickPrompt('Write a script about ${r.name.replace(/'/g, "")} (${r.stars.toLocaleString()} stars): ${r.desc.replace(/'/g, "")}')">`
-        html += `<span style="color:#34d399">${r.stars.toLocaleString()} ★</span> <span style="color:#ccc">${r.name}</span>`;
-        html += `<div style="color:#555;font-size:12px">${r.desc}</div></div>`;
+      let html = '';
+
+      // X/Twitter (real-time via xAI)
+      if (data.xPosts && data.xPosts !== 'X search unavailable') {
+        html += '<div style="margin-bottom:16px"><strong style="color:#1d9bf0">𝕏 Real-Time Buzz</strong></div>';
+        html += '<div style="color:#bbb;font-size:13px;line-height:1.6;margin-bottom:16px;white-space:pre-wrap;cursor:pointer" onclick="quickPrompt(\'Write a script about the hottest X/Twitter topic right now: \' + this.innerText.substring(0,200))">' + data.xPosts.substring(0,1500) + '</div>';
+      }
+
+      // YouTube trending
+      if (data.youtube && data.youtube.length) {
+        html += '<div style="margin-bottom:10px"><strong style="color:#ff0000">YouTube Trending (72hrs)</strong></div>';
+        data.youtube.forEach(v => {
+          const safeTitle = (v.title||'').replace(/'/g,"").substring(0,60);
+          html += '<div style="margin-bottom:8px;cursor:pointer" onclick="quickPrompt(\'Write a script inspired by this viral video: ' + safeTitle + ' (' + (v.views||0).toLocaleString() + ' views)\')">';
+          html += '<span style="color:#ff4444">' + (v.views||0).toLocaleString() + ' views</span> ';
+          html += '<span style="color:#ccc">' + (v.title||'').substring(0,55) + '</span>';
+          html += '<div style="color:#555;font-size:11px">' + (v.channel||'') + '</div></div>';
+        });
+        html += '<div style="height:12px"></div>';
+      }
+
+      // GitHub
+      html += '<div style="margin-bottom:10px"><strong style="color:#e4e4ed">GitHub Trending</strong></div>';
+      (data.github||[]).forEach(r => {
+        const safeName = (r.name||'').replace(/'/g,"");
+        const safeDesc = (r.desc||'').replace(/'/g,"");
+        html += '<div style="margin-bottom:8px;cursor:pointer" onclick="quickPrompt(\'Write a script about ' + safeName + ' (' + (r.stars||0).toLocaleString() + ' stars): ' + safeDesc + '\')">';
+        html += '<span style="color:#34d399">' + (r.stars||0).toLocaleString() + ' ★</span> <span style="color:#ccc">' + (r.name||'') + '</span>';
+        html += '<div style="color:#555;font-size:12px">' + (r.desc||'') + '</div></div>';
       });
-      
+
+      // Reddit
       html += '<div style="margin:16px 0 10px"><strong style="color:#e4e4ed">Reddit Hot</strong></div>';
-      data.reddit.forEach(p => {
-        html += `<div style="margin-bottom:8px;cursor:pointer" onclick="quickPrompt('Write a script about: ${p.title.replace(/'/g, "").substring(0,80)}')">`
-        html += `<span style="color:#f59e0b">${p.score}↑</span> <span style="color:#555">[${p.sub}]</span> <span style="color:#ccc">${p.title.substring(0,70)}</span></div>`;
+      (data.reddit||[]).forEach(p => {
+        const safeTitle = (p.title||'').replace(/'/g,"").substring(0,80);
+        html += '<div style="margin-bottom:8px;cursor:pointer" onclick="quickPrompt(\'Write a script about: ' + safeTitle + '\')">';
+        html += '<span style="color:#f59e0b">' + (p.score||0) + '↑</span> <span style="color:#555">[' + (p.sub||'') + ']</span> <span style="color:#ccc">' + (p.title||'').substring(0,65) + '</span></div>';
       });
-      
-      html += '<div style="margin-top:14px;font-size:11px;color:#555">Tap any trend to generate a script about it</div>';
-      content.innerHTML = html;
-      currentTrends = data.reddit.slice(0,5).map(p => p.title).join('; ') + '; ' + data.github.slice(0,3).map(r => r.name + ' ' + r.stars + ' stars').join('; ');
+
+      html += '<div style="margin-top:14px;font-size:11px;color:#555">Tap any item to generate a script about it</div>';
+      tc.innerHTML = html;
+      currentTrends = (data.xPosts||'').substring(0,300) + '; ' + (data.reddit||[]).slice(0,3).map(p=>p.title).join('; ') + '; ' + (data.github||[]).slice(0,3).map(r=>r.name).join('; ');
     } catch(e) {
-      content.innerHTML = '<span style="color:#ef4444">Failed to load trends. Check connection.</span>';
+      tc.innerHTML = '<span style="color:#ef4444">Failed: ' + e.message + '</span>';
     }
   }
 }
