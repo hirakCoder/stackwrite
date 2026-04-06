@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="robots" content="noindex, nofollow">
+<title>Scripts — ShipWithAI</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: #08080c; color: #e4e4ed;
+    min-height: 100vh; padding-bottom: 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .header {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid #1a1a24;
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(8,8,12,0.92);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  }
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .header p { font-size: 13px; color: #555; margin-top: 4px; }
+
+  .tabs {
+    display: flex; gap: 0; padding: 0 20px;
+    border-bottom: 1px solid #1a1a24;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    padding: 12px 16px; font-size: 13px; font-weight: 600;
+    color: #555; cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab.active { color: #7c6cff; border-bottom-color: #7c6cff; }
+
+  .scripts { padding: 16px 20px; }
+
+  .script-card {
+    background: #111116; border: 1px solid #1e1e28;
+    border-radius: 16px; margin-bottom: 14px;
+    overflow: hidden; transition: border-color 0.2s;
+  }
+  .script-card.done { opacity: 0.4; }
+  .script-card.done .script-head::after { content: ' ✓ POSTED'; color: #34d399; font-size: 11px; }
+
+  .script-head {
+    padding: 18px 20px; cursor: pointer;
+    display: flex; align-items: center; gap: 14px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .script-head:active { background: rgba(255,255,255,0.02); }
+
+  .script-num {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: linear-gradient(135deg, #7c6cff, #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; flex-shrink: 0;
+  }
+  .script-card.done .script-num { background: #1a2e1a; color: #34d399; }
+
+  .script-title { font-size: 15px; font-weight: 600; line-height: 1.3; flex: 1; }
+  .script-arrow { color: #333; font-size: 18px; transition: transform 0.2s; }
+  .script-card.open .script-arrow { transform: rotate(90deg); }
+
+  .script-body { display: none; padding: 0 20px 20px; }
+  .script-card.open .script-body { display: block; }
+
+  /* Timeline beats */
+  .beat {
+    position: relative; padding: 16px 0 16px 20px;
+    border-left: 2px solid #1e1e28;
+    margin-left: 8px;
+  }
+  .beat:last-child { border-left-color: transparent; }
+
+  .beat-time {
+    position: absolute; left: -8px; top: 16px;
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid #7c6cff; background: #08080c;
+  }
+  .beat.hook .beat-time { background: #ef4444; border-color: #ef4444; }
+  .beat.emotional .beat-time { background: #f59e0b; border-color: #f59e0b; }
+  .beat.cta .beat-time { background: #34d399; border-color: #34d399; }
+
+  .beat-timestamp {
+    font-family: 'SF Mono', monospace; font-size: 11px;
+    color: #7c6cff; font-weight: 600; margin-bottom: 6px;
+  }
+
+  .beat-screen {
+    font-size: 12px; color: #666; margin-bottom: 6px;
+    padding: 8px 12px; background: rgba(255,255,255,0.02);
+    border-radius: 8px; border-left: 3px solid #333;
+  }
+  .beat-screen strong { color: #888; }
+
+  .beat-text-overlay {
+    display: inline-block; font-size: 13px; font-weight: 700;
+    color: #fff; background: rgba(124,108,255,0.15);
+    padding: 4px 10px; border-radius: 6px; margin-bottom: 6px;
+  }
+
+  .beat-voiceover {
+    font-size: 15px; line-height: 1.6; color: #ccc;
+    font-style: italic; padding: 8px 0;
+  }
+  .beat-voiceover em { font-style: normal; color: #fff; font-weight: 600; }
+
+  .beat-edit {
+    font-size: 11px; color: #555; margin-top: 4px;
+    padding: 6px 10px; background: rgba(255,255,255,0.02);
+    border-radius: 6px;
+  }
+  .beat-edit::before { content: '✂ '; }
+
+  .beat-why {
+    font-size: 11px; color: #f59e0b; margin-top: 6px;
+    font-weight: 500;
+  }
+  .beat-why::before { content: '💡 '; }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #1a1a24; }
+  .tag { font-size: 11px; color: #7c6cff; background: rgba(124,108,255,0.08); padding: 3px 8px; border-radius: 6px; }
+
+  /* Status buttons */
+  .status-bar {
+    display: flex; gap: 8px; margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid #1a1a24;
+  }
+  .status-btn {
+    flex: 1; padding: 10px; border-radius: 10px; text-align: center;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    border: 1px solid #1e1e28; background: transparent; color: #555;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .status-btn.active { border-color: #34d399; color: #34d399; background: rgba(52,211,153,0.05); }
+  .status-btn:active { background: rgba(255,255,255,0.03); }
+
+  /* Setup section */
+  .setup {
+    margin: 16px 20px; padding: 18px;
+    background: #111116; border: 1px solid #1e1e28;
+    border-radius: 14px;
+  }
+  .setup h3 { font-size: 13px; font-weight: 700; color: #7c6cff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .setup li { font-size: 13px; color: #888; margin-bottom: 6px; list-style: none; padding-left: 16px; position: relative; }
+  .setup li::before { content: '→'; position: absolute; left: 0; color: #555; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ShipWithAI Scripts</h1>
+  <p>Tap any card to expand. Track what's recorded, edited, posted.</p>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" onclick="showTab('product',this)">Product (1-10)</div>
+  <div class="tab" onclick="showTab('value',this)">Value (11-24)</div>
+  <div class="tab" onclick="showTab('setup',this)">Setup</div>
+</div>
+
+<div id="tab-setup" style="display:none">
+  <div class="setup">
+    <h3>Recording</h3>
+    <ul>
+      <li>QuickTime or OBS for screen recording</li>
+      <li>Record screen first, voiceover second (easier, more natural)</li>
+      <li>Voice Memos on phone or built-in Mac mic for audio</li>
+      <li>AirDrop footage to phone for CapCut editing</li>
+    </ul>
+  </div>
+  <div class="setup">
+    <h3>CapCut Mobile Checklist</h3>
+    <ul>
+      <li>Auto-captions ON (bold white, yellow on keywords)</li>
+      <li>Speed ramp slow parts to 2-4x</li>
+      <li>Zoom keyframes on code, UI, numbers</li>
+      <li>Background music at 15% (lo-fi or your Unkaheen tracks)</li>
+      <li>Text overlays: large, bold, center at hook moments</li>
+      <li>Export: 1080x1920, 30fps</li>
+    </ul>
+  </div>
+  <div class="setup">
+    <h3>Posting</h3>
+    <ul>
+      <li>ClipShip: ./clipship.sh video.mp4 "Title" "#tags"</li>
+      <li>Or manually: TikTok first, then YouTube Shorts, then Instagram Reels</li>
+      <li>Post at 7-9 AM or 7-11 PM local time</li>
+      <li>Reply to every comment in first hour (algorithm signal)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="scripts" id="tab-product"></div>
+<div class="scripts" id="tab-value" style="display:none"></div>
+
+<script>
+const S = (k) => JSON.parse(localStorage.getItem('sw-scripts-'+k)||'{}');
+const W = (k,v) => localStorage.setItem('sw-scripts-'+k, JSON.stringify(v));
+
+const productScripts = [
+  {
+    num: 1, title: "I shipped an iOS app using only Claude Code",
+    tags: ["claudecode","iosdev","indiedev","buildinpublic","appstore"],
+    beats: [
+      { time: "0:00", type: "hook", screen: "DayDrop running on iPhone — fast scroll through events", overlay: "I shipped this without opening Xcode", voice: "I shipped this to the App Store. Without opening Xcode.", edit: "Cut tight. Text appears with subtle zoom-in.", why: "Bold claim = instant curiosity" },
+      { time: "0:03", type: "", screen: "Xcode icon with red X, then small checkmark", voice: "Okay. I opened it twice. For provisioning profiles. Because <em>nobody</em> escapes provisioning profiles.", edit: "Smash cut between X and checkmark.", why: "Self-deprecation builds instant trust. Real devs laugh." },
+      { time: "0:06", type: "", screen: "Terminal — Claude Code generating Swift at 3x speed", overlay: "51 builds. 163 tests. All from terminal.", voice: "Fifty-one builds. Hundred sixty-three tests. Widgets. Live Activities. StoreKit subscriptions. All from this terminal.", edit: "Speed to 3x. Code flying past looks impressive. Quick zoom into test count." },
+      { time: "0:15", type: "", screen: "MONTAGE — 2 sec each: Claude writing code → Simulator launching → Widget on home screen → Dynamic Island → App Store 'Ready for Distribution'", voice: "SwiftUI views. Widget extensions. A watch app. I just described what I wanted and Claude built it. Not perfectly — I'll get to the bugs — but close enough to ship.", edit: "Beat-sync cuts to music. 2 seconds per shot max." },
+      { time: "0:25", type: "emotional", screen: "Slow pan across App Store listing", voice: "I'm a QA engineer. Thirteen years. I test other people's code for a living. I never shipped my own thing. Because I was scared. I knew enough to know how much I didn't know.", edit: "SLOW. Let words breathe. No speed ramp. This is the emotional beat.", why: "Vulnerability = follows. This is where people decide to subscribe." },
+      { time: "0:40", type: "emotional", screen: "Revenue dashboard showing $1.40/day", overlay: "$1.40/day", voice: "It makes a dollar forty a day. Which is nothing. Until you remember I built it on my couch. After my kid fell asleep. With tools that didn't exist two years ago.", edit: "Slight zoom into $1.40. Let it sit for a beat." },
+      { time: "0:50", type: "cta", screen: "Terminal with fresh Claude Code session, cursor blinking", overlay: "Follow for the build breakdown", voice: "If you've got an app idea sitting in your notes for two years... the tools are ready. I'll show you exactly how.", edit: "Fade to black over 1 second." }
+    ]
+  },
+  {
+    num: 2, title: "400 lines of Swift. 3 bugs. All mine.",
+    tags: ["claudecode","swift","bugs","aicoding","debug"],
+    beats: [
+      { time: "0:00", type: "hook", screen: "Terminal showing git diff: +412 lines", overlay: "400 lines. 3 bugs. All mine.", voice: "Claude just wrote four hundred lines of Swift. Only three were wrong.", edit: "Zoom into +412. Hold 1 second." },
+      { time: "0:03", type: "", screen: "Claude Code outputting code at 4x speed", overlay: "One prompt. 400+ lines.", voice: "I asked for an event detail view. Full screen. Parallax background. Opacity slider. Live countdown. The works.", edit: "Speed to 4x. Code flying past is visually satisfying." },
+      { time: "0:12", type: "", screen: "Working app on simulator, scrolling the feature", voice: "It generated the entire file. View model. Animations. Toolbar. Even accessibility labels I didn't ask for.", edit: "Normal speed. Show it working." },
+      { time: "0:22", type: "", screen: "Code editor with red squiggly on bug 1", voice: "Bug one. Used .task instead of .onAppear. Animation fired twice.", edit: "Quick zoom to bug. Fast." },
+      { time: "0:28", type: "", screen: "Bug 2 highlighted", voice: "Bug two. Forgot to unwrap an optional image. Crash on launch.", edit: "Cut quick." },
+      { time: "0:32", type: "emotional", screen: "SLOW zoom into Color(hex: 'ZZZZZZ')", overlay: "Color('ZZZZZZ') = black. WHY.", voice: "Bug three. Color hex Z-Z-Z-Z-Z-Z. Which PARSES. As black. Because of how Scanner works in Swift. No error. No crash. Just... wrong color. That took me twenty minutes.", edit: "Slow zoom. Pause for effect. Hold the overlay for 2 seconds.", why: "This is the shareable moment. Devs screenshot this." },
+      { time: "0:45", type: "cta", screen: "Side by side — code left, working app right", overlay: "397/400 = better than my Monday average", voice: "Three bugs in four hundred lines is better than I do on a Monday morning.", edit: "Quick cut to black." }
+    ]
+  },
+  {
+    num: 3, title: "Apple rejected my app. Four times.",
+    tags: ["appstore","rejected","iosdev","mistakes","buildinpublic"],
+    beats: [
+      { time: "0:00", type: "hook", screen: "App Store Connect — big red REJECTED", overlay: "REJECTED ×4", voice: "Apple rejected my app. Four times. All because of a video.", edit: "Dramatic zoom. Bass drop sound effect.", why: "Failure stories get 3x more engagement than success stories." },
+      { time: "0:03", type: "", screen: "Preview video playing — looks great", voice: "I made this preview video. Sora backgrounds. Custom fonts. Twenty-four seconds of pure art.", overlay: "I was so proud of this", edit: "Let video play 3 sec. The irony is it looks good." },
+      { time: "0:10", type: "", screen: "Rejection 1 reason text", voice: "Rejection one. Device frame in the video. Apple says no.", edit: "Zoom into guideline text. Strike-through animation on 'device frame'." },
+      { time: "0:20", type: "", screen: "Rejection 2 — IAP page", voice: "Rejection two. IAPs existed. Just in the wrong tab. One checkbox.", overlay: "One checkbox." },
+      { time: "0:28", type: "", screen: "Screenshot management", voice: "Rejection three. Ghost iPad screenshots from a test upload I forgot about.", overlay: "Ghost screenshots haunting my submission" },
+      { time: "0:36", type: "", screen: "Info.plist zoomed in", voice: "Rejection four. UIDeviceFamily. Value one AND two. I was accidentally claiming iPad support.", overlay: "One line in a plist. Four rejections.", edit: "Zoom into exact line." },
+      { time: "0:46", type: "cta", screen: "App Store Connect — READY FOR DISTRIBUTION in green", overlay: "12 characters of fixes. 4 weeks of waiting.", voice: "Four rejections. Four one-line fixes. Twelve characters total. Nobody tells you about this part.", edit: "Quick cut to black." }
+    ]
+  },
+  {
+    num: 4, title: "Claude Code vs Cursor — used both for a month",
+    tags: ["claudecode","cursor","comparison","honest","devtools"],
+    beats: [
+      { time: "0:00", type: "hook", screen: "Split screen: Cursor left, Claude Code right", overlay: "I used both for a month", voice: "Claude Code or Cursor. I used both on the same project. Here's what happened." },
+      { time: "0:03", type: "", screen: "Cursor autocompleting fast — tab tab tab", voice: "Cursor is fast. Insanely fast. Tab complete is instant. For quick edits, nothing touches it.", overlay: "Cursor: 38 min", edit: "Normal speed. Let the speed speak." },
+      { time: "0:15", type: "", screen: "Claude Code — one sentence typed, 5 files update", voice: "Claude Code. I typed one sentence. It edited my model. My service. My view. My widget. My test file. Five files. One prompt.", overlay: "Claude: 42 min. 5 files.", edit: "Show file list updating." },
+      { time: "0:28", type: "", screen: "Side by side bug count", overlay: "Cursor: 38min 3bugs / Claude: 42min 1bug", voice: "Cursor was faster. Claude was more accurate. But the Cursor bugs were in three different files. Debugging those took longer than the four extra minutes." },
+      { time: "0:40", type: "cta", screen: "Both tools side by side", overlay: "The real answer: use both", voice: "My setup now. Cursor for quick edits. Claude Code for anything complex. Forty bucks a month. Worth every penny." }
+    ]
+  },
+  {
+    num: 5, title: "$1.40/day and I'm celebrating",
+    tags: ["indiedev","revenue","honest","realnumbers","buildinpublic"],
+    beats: [
+      { time: "0:00", type: "hook", screen: "ASC revenue chart — $1.40 highlighted", overlay: "$1.40/day", voice: "My app makes a dollar forty a day. And I'm genuinely celebrating.", edit: "Hold on the number. Let it breathe." },
+      { time: "0:03", type: "emotional", screen: "Slow scroll through DayDrop listing", voice: "Zero dollars a day. That's what I made from my own products for thirteen years. I tested other people's apps. Made other people money. Never my own.", edit: "Slow. No speed ramp." },
+      { time: "0:12", type: "emotional", screen: "Downloads by country — zoom into each flag", voice: "Users in fourteen countries. Tunisia. Malaysia. Argentina. People I'll never meet counting down to their weddings with something I built.", overlay: "14 countries. From my couch.", edit: "Quick zoom into each country flag." },
+      { time: "0:25", type: "", screen: "Calculator: $1.40 × 365 = $511", voice: "A dollar forty a day is five hundred bucks a year. Not retirement money. Barely a car payment." },
+      { time: "0:33", type: "emotional", screen: "Back to revenue chart", overlay: "Proof > profit (for now)", voice: "But it's proof. Proof that a QA engineer can build something people want. That strangers will pay for. That exists because I decided to try.", why: "This is the follow moment." },
+      { time: "0:44", type: "cta", screen: "Claude Code with new project starting", overlay: "Ship something. Follow for the journey.", voice: "Everyone shows their ten-K months. I'm showing you a dollar forty. Because this is where every one of them started. Ship something. A dollar forty feels better than zero." }
+    ]
+  }
+];
+
+const valueScripts = [
+  { num: 11, title: "10 GitHub repos that replaced my paid tools", tags: ["github","opensource","freetools"], beats: [
+    { time: "0:00", type: "hook", screen: "Subscription page with red X marks", overlay: "$1,248/year. Gone.", voice: "I was paying $123 a month for dev tools. Then I found these repos." },
+    { time: "0:05", type: "", screen: "Quick scroll through each repo's GitHub page, 3 sec each", voice: "Ollama — free local LLMs. n8n — free Zapier. Cal.com — free Calendly. Repomix — packs your codebase for AI. Flowise — drag-and-drop AI agents.", edit: "3 seconds per repo. Name appears as text overlay." },
+    { time: "0:45", type: "cta", overlay: "Save this. You will need it.", voice: "Twelve hundred bucks a year back in my pocket." }
+  ]},
+  { num: 12, title: "The GitHub MCP Server changed how I code", tags: ["mcp","claudecode","github"], beats: [
+    { time: "0:00", type: "hook", overlay: "51 tools. One install.", voice: "Fifty-one tools. One npm install. I'm not going back." },
+    { time: "0:05", type: "", screen: "Terminal: create PR from chat", voice: "Create a PR. Review code. Manage issues. All from my terminal. No browser.", edit: "Show each command executing." },
+    { time: "0:45", type: "cta", overlay: "MCP setup link in bio", voice: "Set this up once. Save hours every week." }
+  ]},
+  { num: 13, title: "5 open source AI tools blowing up GitHub", tags: ["github","ai","trending"], beats: [
+    { time: "0:00", type: "hook", screen: "Star counts flashing", overlay: "210K stars in one week", voice: "These five repos are blowing up on GitHub right now." }
+  ]},
+  { num: 14, title: "Run Claude locally. For free.", tags: ["ollama","free","localai"], beats: [
+    { time: "0:00", type: "hook", overlay: "Stop paying $20/month", voice: "Stop paying twenty bucks a month. Run it locally." }
+  ]},
+  { num: 15, title: "Claude vs Cursor vs Copilot — all 3 tested", tags: ["comparison","claudecode","cursor"], beats: [
+    { time: "0:00", type: "hook", overlay: "Same project. Three tools. One winner.", voice: "Same project. Three AI tools. One clear winner." }
+  ]},
+  { num: 16, title: "10 MCP servers every dev needs", tags: ["mcp","devtools","productivity"], beats: [
+    { time: "0:00", type: "hook", overlay: "10 servers. Zero I can live without.", voice: "Ten MCP servers. Zero I can live without." }
+  ]},
+  { num: 17, title: "I deleted 3 subscriptions after finding these", tags: ["free","opensource","money"], beats: [
+    { time: "0:00", type: "hook", screen: "Cancellation confirmation screens", voice: "Three cancellation emails in one morning. Here's what replaced them." }
+  ]},
+  { num: 18, title: "Is vibe coding actually dangerous?", tags: ["vibecoding","controversy","security"], beats: [
+    { time: "0:00", type: "hook", overlay: "I vibe-coded an app. Here's what it missed.", voice: "I vibe-coded an entire app. Here's what the AI missed." }
+  ]},
+  { num: 19, title: "The part about vibe coding nobody shows", tags: ["vibecoding","debugging","honest"], beats: [
+    { time: "0:00", type: "hook", voice: "Everyone shows the build. Nobody shows the twenty minutes of debugging after." }
+  ]},
+  { num: 20, title: "Senior dev reacts to vibe-coded app", tags: ["react","codereview","vibecoding"], beats: [
+    { time: "0:00", type: "hook", screen: "Working app, then start reading code", voice: "It works. Looks great. Now let's read the code." }
+  ]},
+  { num: 21, title: "The terminal trick that 10x'd my Claude Code", tags: ["terminal","claudecode","setup"], beats: [
+    { time: "0:00", type: "hook", screen: "Messy terminal vs clean one", voice: "Same tool. Completely different results. One setup change." }
+  ]},
+  { num: 22, title: "Stop writing READMEs. Let AI do it.", tags: ["readme","documentation","lazy"], beats: [
+    { time: "0:00", type: "hook", screen: "Perfect README generated in 5 seconds", voice: "Five seconds. Perfect README. I'm never writing one again." }
+  ]},
+  { num: 23, title: "I test my iOS app without touching Xcode", tags: ["testing","xcode","claudecode"], beats: [
+    { time: "0:00", type: "hook", screen: "163 tests running in terminal", voice: "Hundred sixty-three tests. From my terminal. Xcode is closed." }
+  ]},
+  { num: 24, title: "This Chrome extension lets AI see your browser", tags: ["chrome","mcp","automation"], beats: [
+    { time: "0:00", type: "hook", voice: "Your AI can now click buttons, read pages, fill forms. Watch." }
+  ]}
+];
+
+function renderScripts(containerId, scripts) {
+  const c = document.getElementById(containerId);
+  const states = S(containerId);
+  
+  c.innerHTML = scripts.map(s => {
+    const st = states[s.num] || {};
+    const isDone = st.recorded && st.edited && st.posted;
+    return `
+    <div class="script-card ${isDone?'done':''}" id="card-${s.num}">
+      <div class="script-head" onclick="this.parentElement.classList.toggle('open')">
+        <div class="script-num">${s.num}</div>
+        <div class="script-title">${s.title}</div>
+        <div class="script-arrow">›</div>
+      </div>
+      <div class="script-body">
+        ${s.beats.map(b => `
+          <div class="beat ${b.type||''}">
+            <div class="beat-time"></div>
+            <div class="beat-timestamp">${b.time||''}</div>
+            ${b.screen?`<div class="beat-screen"><strong>SCREEN:</strong> ${b.screen}</div>`:''}
+            ${b.overlay?`<div class="beat-text-overlay">${b.overlay}</div>`:''}
+            ${b.voice?`<div class="beat-voiceover">${b.voice}</div>`:''}
+            ${b.edit?`<div class="beat-edit">${b.edit}</div>`:''}
+            ${b.why?`<div class="beat-why">${b.why}</div>`:''}
+          </div>
+        `).join('')}
+        <div class="tags">${s.tags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
+        <div class="status-bar">
+          <div class="status-btn ${st.recorded?'active':''}" onclick="toggleStatus(${s.num},'recorded','${containerId}',this)">📹 Recorded</div>
+          <div class="status-btn ${st.edited?'active':''}" onclick="toggleStatus(${s.num},'edited','${containerId}',this)">✂️ Edited</div>
+          <div class="status-btn ${st.posted?'active':''}" onclick="toggleStatus(${s.num},'posted','${containerId}',this)">🚀 Posted</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleStatus(num, field, container, el) {
+  const states = S(container);
+  if (!states[num]) states[num] = {};
+  states[num][field] = !states[num][field];
+  W(container, states);
+  el.classList.toggle('active');
+  // Check if all done
+  const s = states[num];
+  const card = document.getElementById('card-'+num);
+  if (s.recorded && s.edited && s.posted) card.classList.add('done');
+  else card.classList.remove('done');
+}
+
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['product','value','setup'].forEach(t => {
+    const tab = document.getElementById('tab-'+t);
+    if (tab) tab.style.display = t===name?'block':'none';
+  });
+}
+
+renderScripts('tab-product', productScripts);
+renderScripts('tab-value', valueScripts);
+</script>
+</body>
+</html>
