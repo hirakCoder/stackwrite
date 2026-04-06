@@ -384,3 +384,204 @@ renderScripts('tab-value', valueScripts);
 </script>
 </body>
 </html>
+
+<!-- Floating Action Bar -->
+<div id="action-bar" style="
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(8,8,12,0.95); backdrop-filter: blur(16px);
+  border-top: 1px solid #1e1e28; padding: 12px 16px 32px;
+">
+  <div style="display: flex; gap: 8px; max-width: 600px; margin: 0 auto;">
+    <button onclick="showTrends()" style="
+      padding: 10px 14px; background: #1a1a24; border: 1px solid #2a2a34;
+      border-radius: 10px; color: #7c6cff; font-size: 18px; cursor: pointer;
+      flex-shrink: 0;
+    " title="Load trends">📡</button>
+    
+    <input id="prompt-input" type="text" placeholder="Make the hook punchier..." style="
+      flex: 1; padding: 10px 14px; background: #111118; border: 1px solid #2a2a34;
+      border-radius: 10px; color: #e4e4ed; font-size: 15px; outline: none;
+      font-family: -apple-system, system-ui, sans-serif;
+    " />
+    
+    <button onclick="regenerate()" id="gen-btn" style="
+      padding: 10px 18px; background: linear-gradient(135deg, #7c6cff, #a855f7);
+      border: none; border-radius: 10px; color: white; font-size: 14px;
+      font-weight: 600; cursor: pointer; flex-shrink: 0;
+      font-family: -apple-system, system-ui, sans-serif;
+    ">Generate</button>
+  </div>
+  
+  <div style="display: flex; gap: 6px; max-width: 600px; margin: 8px auto 0; overflow-x: auto;">
+    <button class="quick-btn" onclick="quickPrompt('Make the hook more controversial')">🔥 Edgier hook</button>
+    <button class="quick-btn" onclick="quickPrompt('Add more humor and self-deprecation')">😂 Funnier</button>
+    <button class="quick-btn" onclick="quickPrompt('Make it shorter — 45 seconds max')">⏱ Shorter</button>
+    <button class="quick-btn" onclick="quickPrompt('Write a completely new script based on current trends')">📡 From trends</button>
+    <button class="quick-btn" onclick="quickPrompt('Rewrite for maximum TikTok virality — controversy angle')">💣 Viral</button>
+  </div>
+</div>
+
+<!-- Trend Panel (slides up) -->
+<div id="trend-panel" style="
+  display: none; position: fixed; bottom: 120px; left: 16px; right: 16px;
+  max-height: 50vh; overflow-y: auto; z-index: 99;
+  background: #111118; border: 1px solid #2a2a34; border-radius: 16px;
+  padding: 20px; box-shadow: 0 -8px 30px rgba(0,0,0,0.5);
+">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+    <h3 style="font-size: 15px; font-weight: 700; color: #7c6cff;">Live Trends</h3>
+    <button onclick="document.getElementById('trend-panel').style.display='none'" style="
+      background: none; border: none; color: #555; font-size: 20px; cursor: pointer;
+    ">×</button>
+  </div>
+  <div id="trend-content" style="font-size: 13px; color: #888; line-height: 1.6;">
+    Loading trends...
+  </div>
+</div>
+
+<!-- Result overlay -->
+<div id="result-overlay" style="
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 200; background: rgba(8,8,12,0.97); overflow-y: auto;
+  padding: 20px 20px 100px;
+">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-top: 16px;">
+      <h3 style="font-size: 18px; font-weight: 700;">Generated Script</h3>
+      <button onclick="closeResult()" style="
+        background: #1a1a24; border: 1px solid #2a2a34; border-radius: 8px;
+        color: #888; padding: 8px 14px; font-size: 13px; cursor: pointer;
+      ">Close</button>
+    </div>
+    <pre id="result-text" style="
+      white-space: pre-wrap; font-family: -apple-system, system-ui, sans-serif;
+      font-size: 15px; line-height: 1.7; color: #ccc;
+    "></pre>
+    <div style="display: flex; gap: 8px; margin-top: 20px;">
+      <button onclick="copyResult()" style="
+        flex: 1; padding: 12px; background: #7c6cff; border: none; border-radius: 10px;
+        color: white; font-weight: 600; font-size: 14px; cursor: pointer;
+      ">Copy to Clipboard</button>
+      <button onclick="refineResult()" style="
+        flex: 1; padding: 12px; background: #1a1a24; border: 1px solid #2a2a34;
+        border-radius: 10px; color: #ccc; font-size: 14px; cursor: pointer;
+      ">Refine More</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .quick-btn {
+    padding: 6px 12px; background: #1a1a24; border: 1px solid #2a2a34;
+    border-radius: 8px; color: #888; font-size: 12px; cursor: pointer;
+    white-space: nowrap; font-family: -apple-system, system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .quick-btn:active { background: #222; }
+  body { padding-bottom: 160px !important; }
+  #prompt-input:focus { border-color: #7c6cff; }
+</style>
+
+<script>
+let currentTrends = '';
+let lastResult = '';
+
+async function showTrends() {
+  const panel = document.getElementById('trend-panel');
+  const content = document.getElementById('trend-content');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  
+  if (panel.style.display === 'block') {
+    content.innerHTML = '<span style="color:#7c6cff">Scanning Reddit + GitHub...</span>';
+    try {
+      const resp = await fetch('/api/trends');
+      const data = await resp.json();
+      
+      let html = '<div style="margin-bottom:14px"><strong style="color:#e4e4ed">GitHub Trending</strong></div>';
+      data.github.forEach(r => {
+        html += `<div style="margin-bottom:8px;cursor:pointer" onclick="quickPrompt('Write a script about ${r.name.replace(/'/g, "")} (${r.stars.toLocaleString()} stars): ${r.desc.replace(/'/g, "")}')">`
+        html += `<span style="color:#34d399">${r.stars.toLocaleString()} ★</span> <span style="color:#ccc">${r.name}</span>`;
+        html += `<div style="color:#555;font-size:12px">${r.desc}</div></div>`;
+      });
+      
+      html += '<div style="margin:16px 0 10px"><strong style="color:#e4e4ed">Reddit Hot</strong></div>';
+      data.reddit.forEach(p => {
+        html += `<div style="margin-bottom:8px;cursor:pointer" onclick="quickPrompt('Write a script about: ${p.title.replace(/'/g, "").substring(0,80)}')">`
+        html += `<span style="color:#f59e0b">${p.score}↑</span> <span style="color:#555">[${p.sub}]</span> <span style="color:#ccc">${p.title.substring(0,70)}</span></div>`;
+      });
+      
+      html += '<div style="margin-top:14px;font-size:11px;color:#555">Tap any trend to generate a script about it</div>';
+      content.innerHTML = html;
+      currentTrends = data.reddit.slice(0,5).map(p => p.title).join('; ') + '; ' + data.github.slice(0,3).map(r => r.name + ' ' + r.stars + ' stars').join('; ');
+    } catch(e) {
+      content.innerHTML = '<span style="color:#ef4444">Failed to load trends. Check connection.</span>';
+    }
+  }
+}
+
+function quickPrompt(text) {
+  document.getElementById('prompt-input').value = text;
+  document.getElementById('trend-panel').style.display = 'none';
+  regenerate();
+}
+
+async function regenerate() {
+  const input = document.getElementById('prompt-input');
+  const btn = document.getElementById('gen-btn');
+  const prompt = input.value.trim();
+  if (!prompt) return;
+  
+  btn.textContent = '...';
+  btn.style.opacity = '0.5';
+  
+  // Get currently open script's content (if any)
+  const openCard = document.querySelector('.script-card.open .beat-voiceover');
+  const currentScript = openCard ? document.querySelector('.script-card.open .script-body').innerText.substring(0, 2000) : '';
+  
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, currentScript, trends: currentTrends })
+    });
+    const data = await resp.json();
+    
+    if (data.error) {
+      alert('Error: ' + data.error);
+    } else {
+      lastResult = data.script;
+      document.getElementById('result-text').textContent = data.script;
+      document.getElementById('result-overlay').style.display = 'block';
+    }
+  } catch(e) {
+    alert('Network error: ' + e.message);
+  }
+  
+  btn.textContent = 'Generate';
+  btn.style.opacity = '1';
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').style.display = 'none';
+}
+
+function copyResult() {
+  navigator.clipboard.writeText(lastResult).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to Clipboard', 1500);
+  });
+}
+
+function refineResult() {
+  closeResult();
+  document.getElementById('prompt-input').value = '';
+  document.getElementById('prompt-input').placeholder = 'What should change? (builds on last result)';
+  document.getElementById('prompt-input').focus();
+}
+
+// Enter key to generate
+document.getElementById('prompt-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') regenerate();
+});
+</script>
