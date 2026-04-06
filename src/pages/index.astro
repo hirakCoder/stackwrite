@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog')).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const featured = posts[0];
+const rest = posts.slice(1);
+---
+
+<BaseLayout>
+  <!-- Featured Article -->
+  <section class="hero-section">
+    <div class="hero-label">Latest</div>
+    <div class="hero-article">
+      <div class="hero-content">
+        <h1><a href={`/blog/${featured.id}/`}>{featured.data.title}</a></h1>
+        <p class="hero-excerpt">{featured.data.description}</p>
+        <div class="hero-meta">
+          {featured.data.pubDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        </div>
+      </div>
+      <div class="hero-visual">
+        <span class="emoji-hero">🔧</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feed -->
+  <section class="feed-section">
+    <div class="feed-header">More Stories</div>
+    <div class="feed-list">
+      {rest.map((post) => (
+        <a href={`/blog/${post.id}/`} class="feed-item">
+          <div>
+            <div class="feed-category">{post.data.category || 'General'}</div>
+            <div class="feed-title">{post.data.title}</div>
+            <div class="feed-excerpt">{post.data.description}</div>
+          </div>
+          <div class="feed-date">
+            {post.data.pubDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Newsletter -->
+  <div class="cta-box">
+    <h3>Tools that ship faster</h3>
+    <p>Weekly roundup of the best AI tools, hacks, and deals. No spam.</p>
+    <div class="newsletter">
+      <input type="email" placeholder="your@email.com" />
+      <button>Subscribe</button>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Submit Your Tool" description="Get your AI tool, app, or developer product featured on StackWrite.">
+  <div class="content" style="padding: 60px 20px 80px;">
+    <h1 style="font-size: 32px; font-weight: 800; margin-bottom: 12px;">Submit Your Tool</h1>
+    <p style="color: var(--text-muted); margin-bottom: 40px;">We review AI tools, apps, and developer products for our audience of builders. Featured listings start at $200.</p>
+
+    <form action="https://formspree.io/f/placeholder" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
+      <div>
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">Tool Name *</label>
+        <input name="tool_name" required style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;outline:none;" />
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">URL *</label>
+        <input name="url" type="url" required style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;outline:none;" />
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">Category</label>
+        <select name="category" style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;">
+          <option>AI Tool</option>
+          <option>iOS App</option>
+          <option>Android App</option>
+          <option>Web App / SaaS</option>
+          <option>Developer Tool</option>
+          <option>GitHub Repo</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">Description *</label>
+        <textarea name="description" rows="4" required style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;outline:none;resize:vertical;font-family:inherit;"></textarea>
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:6px;">Your Email *</label>
+        <input name="email" type="email" required style="width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;outline:none;" />
+      </div>
+      <button type="submit" class="btn" style="border:none;cursor:pointer;font-size:15px;">Submit for Review</button>
+    </form>
+  </div>
+</BaseLayout>

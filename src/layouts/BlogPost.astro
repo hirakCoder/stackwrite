@@ -1,0 +1,137 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  heroImage?: string;
+  category?: string;
+  youtubeId?: string;
+  tiktokUrl?: string;
+  status?: string;
+  tags?: string[];
+}
+
+const { title, description, pubDate, heroImage, category = 'General', youtubeId, tiktokUrl, status, tags } = Astro.props;
+const formattedDate = pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<BaseLayout title={title} description={description} image={heroImage}>
+  <div class="reading-progress" id="progress"></div>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": title,
+    "description": description,
+    "datePublished": pubDate.toISOString(),
+    "author": { "@type": "Person", "name": "Hirak Banerjee" },
+    "publisher": { "@type": "Organization", "name": "stackwrite.com", "url": "https://stackwrite.com" },
+    ...(youtubeId ? { "video": { "@type": "VideoObject", "embedUrl": `https://www.youtube.com/embed/${youtubeId}` } } : {})
+  })} />
+
+  <article>
+    <div class="article-header">
+      <div class="article-category">{category}</div>
+      <h1>{title}</h1>
+      <div class="article-meta">
+        <span class="article-author">Hirak Banerjee</span>
+        <span>{formattedDate}</span>
+        {tags && tags.length > 0 && (
+          <span class="article-tags">
+            {tags.map(tag => <span class="tag">#{tag}</span>)}
+          </span>
+        )}
+      </div>
+    </div>
+
+    {/* Video embed */}
+    {youtubeId && (
+      <div class="video-embed">
+        <div class="video-wrapper">
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeId}`}
+            title={title}
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+          ></iframe>
+        </div>
+        <p class="video-caption">Watch the video version</p>
+      </div>
+    )}
+
+    {tiktokUrl && !youtubeId && (
+      <div class="video-embed" style="text-align: center;">
+        <a href={tiktokUrl} class="tiktok-link" target="_blank" rel="noopener">
+          <span class="tiktok-icon">▶</span> Watch the 60-second version on TikTok
+        </a>
+      </div>
+    )}
+
+    <div class="prose">
+      <slot />
+    </div>
+  </article>
+
+  {/* Newsletter CTA */}
+  <div class="cta-box" style="margin: 0 24px 48px;">
+    <h3>Don't miss the next one</h3>
+    <p>Tools, hacks, and deals for builders. Weekly. No spam.</p>
+    <div class="newsletter">
+      <!-- Replace with your Kit (ConvertKit) form action URL after signup -->
+      <input type="email" placeholder="your@email.com" id="newsletter-email" />
+      <button onclick="alert('Set up Kit (free, 10K subs) at kit.com and replace this with your form action')">Subscribe</button>
+    </div>
+    <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">Join 0 builders. Unsubscribe anytime.</p>
+  </div>
+
+  {/* Comments — Giscus (GitHub Discussions) */}
+  <div class="comments-section" style="max-width: var(--content-width); margin: 0 auto; padding: 0 24px 80px;">
+    <h3 style="font-family: -apple-system, system-ui, sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; padding-top: 32px; border-top: 1px solid var(--border);">Comments</h3>
+
+    <!--
+      Giscus Setup (free, GitHub-powered):
+      1. Create a public GitHub repo: stackwrite/comments (or similar)
+      2. Enable Discussions on that repo
+      3. Go to giscus.app and configure
+      4. Replace the script below with your generated script
+    -->
+    <script
+      src="https://giscus.app/client.js"
+      data-repo="hirakCoder/stackwrite"
+      data-repo-id=""
+      data-category="Comments"
+      data-category-id=""
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="dark_dimmed"
+      data-lang="en"
+      crossorigin="anonymous"
+      async
+    ></script>
+
+    <noscript>
+      <p style="color: var(--text-tertiary); font-size: 14px;">Comments require JavaScript. Or discuss on <a href="https://x.com/hirak8">X @hirak8</a>.</p>
+    </noscript>
+  </div>
+
+  {/* Reading progress */}
+  <script>
+    window.addEventListener('scroll', () => {
+      const article = document.querySelector('.prose');
+      if (!article) return;
+      const rect = article.getBoundingClientRect();
+      const total = article.offsetHeight - window.innerHeight;
+      const scrolled = Math.max(0, -rect.top);
+      const pct = Math.min(100, (scrolled / total) * 100);
+      const bar = document.getElementById('progress');
+      if (bar) bar.style.width = pct + '%';
+    });
+  </script>
+</BaseLayout>

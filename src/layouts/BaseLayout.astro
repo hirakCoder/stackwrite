@@ -1,0 +1,70 @@
+---
+import '../styles/global.css';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const { title = SITE_TITLE, description = SITE_DESCRIPTION, image = '/og-default.png' } = Astro.props;
+const pageTitle = title === SITE_TITLE ? title : `${title} | ${SITE_TITLE}`;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{pageTitle}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalURL} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={canonicalURL} />
+  <meta property="og:title" content={pageTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:site_name" content="stackwrite.com" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={pageTitle} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:site" content="@hirak8" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "stackwrite.com",
+    "url": "https://stackwrite.com",
+    "description": SITE_DESCRIPTION,
+    "founder": { "@type": "Person", "name": "Hirak Banerjee" },
+    "sameAs": ["https://x.com/hirak8"]
+  })} />
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo">stackwrite<em>.com</em></a>
+      <div class="nav-links">
+        <a href="/category/ai-tools">AI Tools</a>
+        <a href="/category/vibe-coding">Vibe Coding</a>
+        <a href="/category/apps">Apps</a>
+        <a href="/submit">Submit</a>
+      </div>
+    </div>
+  </nav>
+
+  <slot />
+
+  <footer class="site-footer">
+    <p>&copy; {new Date().getFullYear()} stackwrite.com &middot; Built by <a href="https://hirakcoder.github.io">Hirak Banerjee</a></p>
+    <p style="margin-top: 8px;">
+      <a href="/about">About</a> &middot;
+      <a href="/submit">Submit Your Tool</a> &middot;
+      <a href="/pipeline">Pipeline</a> &middot;
+      <a href="/rss.xml">RSS</a>
+    </p>
+  </footer>
+</body>
+</html>

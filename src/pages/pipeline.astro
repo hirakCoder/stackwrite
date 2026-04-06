@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog')).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const withVideo = posts.filter(p => p.data.youtubeId);
+const needsVideo = posts.filter(p => p.data.status === 'needs-video' || (!p.data.youtubeId && p.data.status !== 'research'));
+const researchOnly = posts.filter(p => p.data.status === 'research');
+---
+
+<BaseLayout title="Content Pipeline" description="Internal content pipeline — video status for all articles.">
+  <div style="max-width: var(--content-width); margin: 0 auto; padding: 64px 24px 80px;">
+    <h1 style="font-size: 32px; font-weight: 800; margin-bottom: 8px; font-family: -apple-system, system-ui, sans-serif;">Content Pipeline</h1>
+    <p style="color: var(--text-tertiary); margin-bottom: 40px; font-family: -apple-system, system-ui, sans-serif; font-size: 15px;">
+      Track which articles have videos, need videos, or are research-only.
+    </p>
+
+    {needsVideo.length > 0 && (
+      <div style="margin-bottom: 48px;">
+        <h2 style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--amber); margin-bottom: 16px; font-family: -apple-system, system-ui, sans-serif;">
+          Needs Video ({needsVideo.length})
+        </h2>
+        {needsVideo.map(post => (
+          <a href={`/blog/${post.id}/`} style="display: block; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.03); text-decoration: none;">
+            <div style="font-size: 17px; font-weight: 600; color: var(--text); font-family: -apple-system, system-ui, sans-serif;">{post.data.title}</div>
+            <div style="font-size: 13px; color: var(--text-tertiary); margin-top: 4px; font-family: -apple-system, system-ui, sans-serif;">
+              {post.data.category} · {post.data.pubDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+
+    {withVideo.length > 0 && (
+      <div style="margin-bottom: 48px;">
+        <h2 style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--green); margin-bottom: 16px; font-family: -apple-system, system-ui, sans-serif;">
+          Has Video ({withVideo.length})
+        </h2>
+        {withVideo.map(post => (
+          <a href={`/blog/${post.id}/`} style="display: block; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.03); text-decoration: none;">
+            <div style="font-size: 17px; font-weight: 600; color: var(--text); font-family: -apple-system, system-ui, sans-serif;">{post.data.title}</div>
+            <div style="font-size: 13px; color: var(--green); margin-top: 4px; font-family: -apple-system, system-ui, sans-serif;">
+              ▶ youtube.com/watch?v={post.data.youtubeId}
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+
+    {researchOnly.length > 0 && (
+      <div>
+        <h2 style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--rose); margin-bottom: 16px; font-family: -apple-system, system-ui, sans-serif;">
+          Research Only ({researchOnly.length})
+        </h2>
+        {researchOnly.map(post => (
+          <a href={`/blog/${post.id}/`} style="display: block; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.03); text-decoration: none;">
+            <div style="font-size: 17px; font-weight: 600; color: var(--text); font-family: -apple-system, system-ui, sans-serif;">{post.data.title}</div>
+            <div style="font-size: 13px; color: var(--text-tertiary); margin-top: 4px; font-family: -apple-system, system-ui, sans-serif;">
+              Too detailed for video — article only
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</BaseLayout>

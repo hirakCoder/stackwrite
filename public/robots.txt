@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Welcome AI crawlers for GEO/LLM visibility
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+Sitemap: https://stackwrite.com/sitemap-index.xml
