@@ -49,8 +49,23 @@ const rest = posts.slice(1);
     <h3>Tools that ship faster</h3>
     <p>Weekly roundup of the best AI tools, hacks, and deals. No spam.</p>
     <div class="newsletter">
-      <input type="email" placeholder="your@email.com" />
-      <button>Subscribe</button>
+      <input type="email" placeholder="your@email.com" id="home-email" />
+      <button id="home-sub-btn" onclick="homeSub()">Subscribe</button>
     </div>
+    <script>
+    async function homeSub() {
+      const email = document.getElementById('home-email').value.trim();
+      const btn = document.getElementById('home-sub-btn');
+      if (!email || !email.includes('@')) return;
+      btn.textContent = '...';
+      try {
+        const r = await fetch('/api/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email}) });
+        const d = await r.json();
+        btn.textContent = d.success ? 'Subscribed!' : 'Error';
+        if(d.success) { btn.style.background='#22c55e'; document.getElementById('home-email').value=''; }
+      } catch(e) { btn.textContent = 'Error'; }
+      setTimeout(()=>{ btn.textContent='Subscribe'; btn.style.background=''; }, 3000);
+    }
+    </script>
   </div>
 </BaseLayout>

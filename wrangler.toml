@@ -1,0 +1,6 @@
+name = "stackwrite"
+compatibility_date = "2024-09-23"
+
+[[kv_namespaces]]
+binding = "SUBSCRIBERS"
+id = "64ced90662fe4dc384d786b96d717f54"

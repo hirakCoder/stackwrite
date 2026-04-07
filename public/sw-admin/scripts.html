@@ -386,7 +386,7 @@ renderScripts('tab-value', valueScripts);
 </html>
 
 <!-- Floating Action Bar -->
-<div id="action-bar" style="
+<div id="action-bar" style="position:relative;
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
   background: rgba(8,8,12,0.95); backdrop-filter: blur(16px);
   border-top: 1px solid #1e1e28; padding: 12px 16px 32px;
@@ -398,6 +398,7 @@ renderScripts('tab-value', valueScripts);
       flex-shrink: 0;
     " title="Load trends">📡</button>
     
+    <span id="editing-label" style="display:none;font-size:11px;color:#7c6cff;position:absolute;top:-18px;left:60px;font-weight:600"></span>
     <input id="prompt-input" type="text" placeholder="Make the hook punchier..." style="
       flex: 1; padding: 10px 14px; background: #111118; border: 1px solid #2a2a34;
       border-radius: 10px; color: #e4e4ed; font-size: 15px; outline: none;
@@ -479,6 +480,7 @@ renderScripts('tab-value', valueScripts);
   }
   .quick-btn:active { background: #222; }
   body { padding-bottom: 160px !important; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
   #prompt-input:focus { border-color: #7c6cff; }
 </style>
 
@@ -556,12 +558,20 @@ async function regenerate() {
   const prompt = input.value.trim();
   if (!prompt) return;
   
-  btn.textContent = '...';
-  btn.style.opacity = '0.5';
+  btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;font-size:16px">⟳</span> Generating...';
+  btn.style.opacity = '0.7';
+  btn.disabled = true;
+  document.getElementById('prompt-input').disabled = true;
   
   // Get currently open script's content (if any)
-  const openCard = document.querySelector('.script-card.open .beat-voiceover');
-  const currentScript = openCard ? document.querySelector('.script-card.open .script-body').innerText.substring(0, 2000) : '';
+  const openCard = document.querySelector('.script-card.open');
+  const currentScript = openCard ? openCard.querySelector('.script-body').innerText.substring(0, 2000) : '';
+  const editingTitle = openCard ? openCard.querySelector('.script-title').textContent : '';
+  const label = document.getElementById('editing-label');
+  if (editingTitle) {
+    label.textContent = 'Editing: ' + editingTitle;
+    label.style.display = 'block';
+  }
   
   try {
     const resp = await fetch('/api/generate', {
@@ -584,6 +594,8 @@ async function regenerate() {
   
   btn.textContent = 'Generate';
   btn.style.opacity = '1';
+  btn.disabled = false;
+  document.getElementById('prompt-input').disabled = false;
 }
 
 function closeResult() {

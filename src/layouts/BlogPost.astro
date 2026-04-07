@@ -81,11 +81,26 @@ const formattedDate = pubDate.toLocaleDateString('en-US', { year: 'numeric', mon
     <h3>Don't miss the next one</h3>
     <p>Tools, hacks, and deals for builders. Weekly. No spam.</p>
     <div class="newsletter">
-      <!-- Replace with your Kit (ConvertKit) form action URL after signup -->
       <input type="email" placeholder="your@email.com" id="newsletter-email" />
-      <button onclick="alert('Set up Kit (free, 10K subs) at kit.com and replace this with your form action')">Subscribe</button>
+      <button id="sub-btn" onclick="subscribe()">Subscribe</button>
     </div>
-    <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">Join 0 builders. Unsubscribe anytime.</p>
+    <p id="sub-count" style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">Join builders who ship faster. No spam.</p>
+    <script>
+    async function subscribe() {
+      const email = document.getElementById('newsletter-email').value.trim();
+      const btn = document.getElementById('sub-btn');
+      if (!email || !email.includes('@')) { btn.textContent = 'Enter valid email'; setTimeout(()=>btn.textContent='Subscribe',2000); return; }
+      btn.textContent = '...';
+      try {
+        const r = await fetch('/api/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email}) });
+        const d = await r.json();
+        if (d.success) { btn.textContent = 'Subscribed!'; btn.style.background='#22c55e'; document.getElementById('newsletter-email').value=''; }
+        else { btn.textContent = d.error || 'Error'; }
+      } catch(e) { btn.textContent = 'Error'; }
+      setTimeout(()=>{ btn.textContent='Subscribe'; btn.style.background=''; }, 3000);
+    }
+    document.getElementById('newsletter-email').addEventListener('keydown', e => { if(e.key==='Enter') subscribe(); });
+    </script>
   </div>
 
   {/* Comments — Giscus (GitHub Discussions) */}
@@ -103,7 +118,7 @@ const formattedDate = pubDate.toLocaleDateString('en-US', { year: 'numeric', mon
       src="https://giscus.app/client.js"
       data-repo="hirakCoder/stackwrite"
       data-repo-id="R_kgDOR7WamA"
-      data-category="Comments"
+      data-category="General"
       data-category-id="DIC_kwDOR7WamM4C6L8i"
       data-mapping="pathname"
       data-strict="0"
